@@ -1,21 +1,4 @@
-Listed directory frontend
-Viewed package.json:1-35
-Viewed vite.config.js:1-21
-Listed directory src
-Listed directory pages
-Listed directory components
-Viewed App.jsx:1-25
-Viewed UploadPage.jsx:1-216
-Viewed SimulatePage.jsx:1-272
-Viewed MotorComparisonPage.jsx:1-306
-Viewed PlotlyChart.jsx:1-35
-Viewed SimChart.jsx:1-79
-Viewed ThrustChart.jsx:1-54
-Viewed ErrorBoundary.jsx:1-21
-Listed directory data
-Listed directory docs
-Viewed motor.csv:1-74
-Viewed TTI%20TIVRA%20K-925%20Thrust%20Vs%20Time%20Data%20%28Motor%20A%29.csv:1-62
+
 
 # 🚀 Rocket Motor Analysis & Flight Simulation: Technical Interview Master Question Bank
 
