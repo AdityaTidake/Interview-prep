@@ -30,6 +30,14 @@ Before coding, ask:
 7. **Repeatedly need smallest/largest?** → `priority_queue`
 8. **Need sorting/searching on a range?** → STL algorithms
 
+<img width="172" height="42" alt="image" src="https://github.com/user-attachments/assets/de948b0a-8883-46a9-956e-3a0815c79a4f" />
+
+<img width="1172" height="613" alt="image" src="https://github.com/user-attachments/assets/75776796-41ef-488f-bbc0-95113e3e3ab4" />
+
+<img width="783" height="495" alt="image" src="https://github.com/user-attachments/assets/40d6b678-7261-4d8e-939b-c28259608054" />
+
+<img width="694" height="717" alt="image" src="https://github.com/user-attachments/assets/b3de5fed-aa4c-47fb-8048-c4f7216955b1" />
+
 ---
 
 # 1. Complexity Cheat Table
@@ -51,6 +59,11 @@ Before coding, ask:
 | `priority_queue` | Top `O(1)` | — | `O(log n)` | `O(log n)` | Heap order only |
 
 > **Important:** Hash-table operations are **average-case `O(1)`**, not guaranteed `O(1)`. Worst case can be `O(n)`.
+>
+> 
+
+
+
 
 ---
 
