@@ -1,30 +1,4 @@
-Listed directory StreamOn
-Listed directory StreamOn
-Listed directory Client
-Listed directory Server
-Listed directory UI
-Listed directory Server-client_UI
-Viewed README.md:1-288
-Viewed Protocol.h:1-120
-Viewed RSACrypto.h:1-111
-Viewed RSACrypto.cpp:1-517
-Viewed kyberKEM.h:1-103
-Viewed kyberKEM.cpp:1-260
-Viewed keyManager.h:1-113
-Viewed keyManager.cpp:1-255
-Viewed FrameEncryptor.h:1-60
-Viewed FrameEncrypter.cpp:1-139
-Viewed FrameDecryptor.h:1-54
-Viewed FrameDecryptor.cpp:1-97
-Viewed StreamServer.h:1-107
-Viewed StreamClient.h:1-104
-Viewed StreamClient.cpp:1-393
-Viewed ServerWindow.cpp:1-545
-Searched for "StreamServer::"
-Searched for "HandleGetKeys"
-Viewed main.cpp:1-191
-Viewed Logic.cpp:1-147
-Viewed Logic.cpp:1-121
+
 
 # StreamOn 🔒 — Comprehensive Senior Technical Interview Question Bank & Defense Guide
 
@@ -116,6 +90,28 @@ To verify that you understand the request/response lifecycle, data transformatio
 A simple way to explain the flow is: **camera → JPEG compression → encryption → network → decryption → JPEG decoding → display**. The camera captures a frame, the frame is compressed to reduce its size, the current HTTPS version encrypts it in RSA-sized chunks, and the server makes the latest encrypted frame available. The client downloads it, decrypts it, converts it back into an image, and displays it.
 
 
+
+
+**Simple Flow:**
+
+```text
+Webcam
+  ↓
+Capture Frame
+  ↓
+JPEG Compression
+  ↓
+Encryption
+  ↓
+Network
+  ↓
+Decryption
+  ↓
+JPEG Decode
+  ↓
+Client Display
+```
+
 **Important points I must mention:**
 * Frame pipeline: `cv::Mat` $\rightarrow$ JPEG `std::vector<uint8_t>` $\rightarrow$ RSA encrypted chunks $\rightarrow$ HTTPS transmission $\rightarrow$ RSA decryption $\rightarrow$ JPEG decode $\rightarrow$ Win32 GDI display.
 * Specific block sizes: 214 bytes plaintext $\rightarrow$ 256 bytes ciphertext per RSA block.
@@ -140,6 +136,27 @@ To see if you understand key encapsulation mechanics, public key distribution, a
 **Expected Answer:**  
 Before streaming, the client and server establish a shared secret. First, the client gets the server's public keys. Then the client sends its public keys, and the server uses the client's Kyber public key to create a Kyber ciphertext and a shared secret. The client decapsulates that ciphertext with its private Kyber key, so both sides end up with the same 32-byte shared secret. The handshake uses `GET /keys` and `POST /handshake`.
 
+
+
+
+**Handshake Flow:**
+
+```text
+Client                              Server
+  │                                   │
+  │────── Request public keys ──────>│
+  │<──── Kyber + RSA public keys ─────│
+  │                                   │
+  │──── Send client's public keys ───>│
+  │                                   │
+  │                         Kyber encapsulation
+  │                                   │
+  │<──── Ciphertext + server key ─────│
+  │                                   │
+  │       Kyber decapsulation          │
+  │                                   │
+  └──── Same shared secret ──────────┘
+```
 
 **Important points I must mention:**
 * HTTP endpoints involved: `GET /keys` and `POST /handshake`.
@@ -167,6 +184,32 @@ To test object-oriented separation of concerns, modular design, and dependency m
 StreamOn is organized into separate layers so each part has one main responsibility: camera/media capture, cryptography, frame processing, networking, and the user interface. This separation makes the code easier to understand and change. `KeyManager` acts as a higher-level coordinator for the RSA and Kyber components, while callbacks and buffers keep the layers loosely connected.
 
 
+
+
+**Architecture Overview:**
+
+```text
+┌──────────────────────┐
+│ Presentation / UI    │
+└──────────┬───────────┘
+           ↓
+┌──────────────────────┐
+│ Networking           │
+└──────────┬───────────┘
+           ↓
+┌──────────────────────┐
+│ Payload Processing   │
+└──────────┬───────────┘
+           ↓
+┌──────────────────────┐
+│ Cryptography         │
+└──────────┬───────────┘
+           ↓
+┌──────────────────────┐
+│ Camera / Media       │
+└──────────────────────┘
+```
+
 **Important points I must mention:**
 * Clear distinction between Capture, Cryptography, Payload Transformation, Transport, and UI.
 * Use of **Facade Pattern** in `KeyManager` to hide OpenSSL / liboqs complexity.
@@ -189,6 +232,24 @@ Multithreaded media applications suffer from UI blocking, data corruption, and r
 **Expected Answer:**  
 The application separates work across the UI thread, camera thread, and network threads. The UI thread handles Windows messages and should not perform slow work. Camera and network operations run in the background. Mutexes protect shared frame data, atomics handle simple status flags, and `PostMessage` tells the UI thread when a new frame is ready. This prevents race conditions and keeps the interface responsive.
 
+
+
+
+**Threading Model:**
+
+```text
+                 ┌───────────────┐
+                 │   UI Thread   │
+                 │ Win32 Events  │
+                 └───────┬───────┘
+                         ↑
+                    PostMessage
+                         │
+┌────────────────┐       │       ┌─────────────────┐
+│ Camera Thread  │───────┘       │ Network Thread │
+│ Capture/Encode │               │ Send / Receive │
+└────────────────┘               └─────────────────┘
+```
 
 **Important points I must mention:**
 * Separation of UI Thread, Camera Thread, and Network Threads.
@@ -215,6 +276,20 @@ To test your network protocol knowledge (TCP vs UDP, HTTP Polling vs Sockets) an
 **Expected Answer:**  
 The project has two network approaches because they demonstrate different trade-offs. **HTTPS/TCP polling** is easier to integrate with a GUI and provides reliable, structured communication, but it adds polling and TCP latency. **UDP** is faster and better suited to real-time video because it avoids TCP head-of-line blocking, but packets can be lost or arrive out of order. For real-time streaming, UDP is generally the better starting point.
 
+
+
+
+**Transport Comparison:**
+
+```text
+HTTPS / TCP                         UDP
+     │                               │
+Reliable + ordered              Fast + low latency
+     │                               │
+Higher overhead                Possible packet loss
+     │                               │
+Good for control/API            Good for live media
+```
 
 **Important points I must mention:**
 * UDP build focus: Low latency, custom binary protocol, MTU chunking.
@@ -285,6 +360,28 @@ To test whether you understand the functional distinction between a Key Encapsul
 Kyber and RSA have different roles. Kyber is a **KEM**, so its job is to establish a shared secret; it is not designed to encrypt a large video stream directly. RSA is used in the current prototype for asymmetric operations and frame encryption. The hybrid idea gives the project a post-quantum key-establishment component while retaining the classical RSA component. In a production design, the shared secret would be used with a fast symmetric cipher such as AES-256-GCM.
 
 
+
+
+**Hybrid Crypto Idea:**
+
+```text
+        Key Exchange
+             │
+       ┌─────┴─────┐
+       ↓           ↓
+    Kyber        RSA
+       │           │
+ Quantum-       Classical
+ resistant      security /
+ key setup      authentication
+       │           │
+       └─────┬─────┘
+             ↓
+       Session Secret
+             ↓
+       Video Encryption
+```
+
 **Important points I must mention:**
 * Kyber is a **KEM**, not a bulk encryption cipher; it cannot directly encrypt video files.
 * Hybrid approach combines Kyber's **Post-Quantum Key Exchange** with RSA's **Authentication & Signatures**.
@@ -307,6 +404,22 @@ To see if you can evaluate existing code critically and identify cryptanalytic w
 **Expected Answer:**  
 In the UDP prototype, each byte of the JPEG is XORed with a repeating 32-byte shared key. This is very fast, but it is **not secure encryption**. JPEG files have predictable header bytes, so an attacker can use known plaintext to recover parts of the repeating key. Reusing the same key without a nonce also creates additional weaknesses. A production version should replace this with AES-256-GCM or ChaCha20-Poly1305.
 
+
+
+
+**Why Repeating XOR Is Unsafe:**
+
+```text
+Known JPEG Header + Ciphertext
+              ↓
+        XOR operation
+              ↓
+        Repeated key bytes
+              ↓
+      Key information leaks
+              ↓
+     Attacker can recover data
+```
 
 **Important points I must mention:**
 * Implementation: Simple XOR loop `buf[i] ^= shared_key[i % 32]`.
@@ -399,6 +512,25 @@ To test your understanding of UDP Maximum Transmission Unit (MTU) restrictions a
 **Expected Answer:**  
 UDP packets cannot be made arbitrarily large because large packets may be fragmented by the network. StreamOn therefore keeps the encrypted payload around 1200 bytes per packet, safely below the usual Ethernet MTU limit. Each packet also has a small header containing the packet type, frame ID, total number of chunks, and current chunk index. The receiver uses these fields to rebuild the original frame.
 
+
+
+
+**UDP Fragmentation:**
+
+```text
+Encrypted Frame
+      │
+      ├── Chunk 1 + Header ──→ UDP
+      ├── Chunk 2 + Header ──→ UDP
+      ├── Chunk 3 + Header ──→ UDP
+      └── Chunk N + Header ──→ UDP
+                │
+                ↓
+        Client reassembles
+                │
+                ↓
+        Complete video frame
+```
 
 **Important points I must mention:**
 * MTU limitation: Ethernet 1500 bytes; application payload kept to 1200 bytes.
@@ -512,6 +644,22 @@ To test your comprehension of chunk slicing loops, vector pre-allocations, and e
 `FrameEncryptor` takes a compressed JPEG frame and breaks it into chunks small enough for RSA-OAEP. Each chunk is encrypted separately and the encrypted blocks are joined into one output buffer. It checks that the RSA key is available and that the frame is not empty, and it stops if encryption fails. Pre-allocating the output buffer also reduces unnecessary memory reallocations.
 
 
+
+
+**Frame Encryption:**
+
+```text
+JPEG Frame
+    ↓
+Split into small chunks
+    ↓
+Encrypt each chunk
+    ↓
+Combine encrypted blocks
+    ↓
+Send as one encrypted payload
+```
+
 **Important points I must mention:**
 * Input validation: Null RSA pointer check, public key state check, empty frame check.
 * Vector memory pre-allocation using `reserve()` to avoid intermediate buffer copies.
@@ -534,6 +682,26 @@ To see how you implement defensive checks (bounds checking, alignment validation
 **Expected Answer:**  
 Before decrypting, `FrameDecryptor` checks that the ciphertext size is a multiple of the RSA block size, which is 256 bytes. It then decrypts each block and joins the plaintext chunks back together. If any block fails decryption, the whole frame is rejected. The resulting bytes should form the original JPEG, which can then be decoded and displayed.
 
+
+
+
+**Decryption & Validation:**
+
+```text
+Incoming Ciphertext
+        ↓
+Check block alignment
+        ↓
+Decrypt each block
+        ↓
+Any block fails? ── Yes → Drop frame
+        │
+        No
+        ↓
+Reassemble JPEG
+        ↓
+Decode & Display
+```
 
 **Important points I must mention:**
 * Defensive check: `encryptedBytes.size() % 256 == 0`.
@@ -580,6 +748,25 @@ This is a critical senior-level interview question. RSA is asymmetric math and i
 Using RSA to encrypt every video frame is one of the biggest weaknesses of the current prototype. RSA is computationally expensive and can only encrypt small chunks, so a single 30 KB frame may require many RSA operations. It also increases the amount of data sent. The correct production approach is to use RSA/Kyber only during the handshake and then use a fast symmetric cipher such as AES-256-GCM or ChaCha20-Poly1305 for the video payload.
 
 
+
+
+**Production Encryption Design:**
+
+```text
+          Handshake
+       Kyber / RSA
+             ↓
+       Session Key
+             ↓
+     ┌───────────────┐
+     │ AES-GCM /     │
+     │ ChaCha20-Poly │
+     └───────┬───────┘
+             ↓
+       Entire video
+          payload
+```
+
 **Important points I must mention:**
 * RSA modular exponentiation is too computationally expensive for real-time video payload processing ($4200 \text{ ops/sec}$ at 30 FPS).
 * Payload expansion penalty (~19.6%).
@@ -603,6 +790,19 @@ To test your knowledge of media streaming protocols and client-server communicat
 HTTP polling makes the client repeatedly ask for a new frame, which creates unnecessary request overhead and adds latency. WebSockets provide a persistent connection and allow the server to push data more efficiently. RTP/RTSP over UDP is designed more specifically for real-time media and can provide lower latency. For a production real-time system, WebRTC or RTP/SRTP would generally be more suitable than repeated HTTP polling.
 
 
+
+
+**Streaming Architecture:**
+
+```text
+HTTP Polling          WebSocket          RTP/UDP
+     │                   │                  │
+Client asks         Server pushes       Server pushes
+again and again        data               datagrams
+     │                   │                  │
+Higher latency       Lower latency      Lowest latency
+```
+
 **Important points I must mention:**
 * HTTP Polling creates massive HTTP header overhead and latency penalties.
 * WebSockets or RTP (Real-Time Transport Protocol) over UDP are industry standards for low-latency live video push streaming.
@@ -624,6 +824,19 @@ To see how your application handles backpressure when production networks experi
 **Expected Answer:**  
 StreamOn keeps only the latest encrypted frame instead of storing an unlimited queue of frames. When a new frame arrives, it replaces the previous one. This keeps memory usage bounded and ensures that a slow client receives a recent frame rather than a very old one. The trade-off is that intermediate frames are dropped when the network cannot keep up.
 
+
+
+
+**Latest-Frame Strategy:**
+
+```text
+Frame 1 ─┐
+Frame 2 ─┼──→ Single Buffer ──→ Client gets latest frame
+Frame 3 ─┤        ↑
+Frame 4 ─┘     overwrite
+
+Old frames are dropped instead of queued indefinitely.
+```
 
 **Important points I must mention:**
 * Single-frame buffer overwrite strategy (`m_latestEncryptedFrame = std::move(...)`).
@@ -670,6 +883,26 @@ High-performance video streaming relies on eliminating unnecessary memory copies
 **Expected Answer:**  
 There are several places where frame data can be copied: during JPEG encoding, encryption chunk creation, frame buffering, and network response handling. These repeated allocations and copies can hurt performance. A better design would reuse pre-allocated buffers, use move semantics where ownership can be transferred, and pass non-owning views such as `std::span` where appropriate. The goal is to reduce unnecessary memory movement.
 
+
+
+
+**Typical Buffer Flow:**
+
+```text
+Camera Frame
+     ↓ copy
+JPEG Buffer
+     ↓ copy
+Encryption Buffer
+     ↓ copy
+Network Buffer
+     ↓
+Client Buffer
+     ↓
+Display
+
+Goal: reduce unnecessary copies between these stages.
+```
 
 **Important points I must mention:**
 * Current bottleneck: Multiple vector allocations and copies per frame.
